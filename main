@@ -1,0 +1,153 @@
+package sorting
+import java.util.Scanner
+import java.io.File
+
+val scan = Scanner(System.`in`)
+var x: MutableList<String> = ArrayList()
+var y: MutableList<Long> = ArrayList()
+
+fun main(args:Array<String>) {
+    val dataTypeList = listOf("-dataType", "word", "long", "line")
+    val sortingTypeList = listOf("-sortingType", "natural", "byCount")
+    val category = if (args.contains("long")) "numbers" else if (args.contains("line")) "lines" else "words"
+
+    when {
+        args.contains("-sortingType") && args.intersect(sortingTypeList).size < 2 -> println("No sorting type defined!")
+        args.contains("-dataType") && args.intersect(dataTypeList).size < 2 -> println("No data type defined!")
+        args.contains("byCount") -> {
+            when (category) {
+                "numbers" -> {
+                    if (args.contains("-inputFile")) {
+                        val inputContent = File(args[args.indexOfFirst { it == "-inputFile" } + 1]).readText().split(" ")
+                        for (i in inputContent) {
+                            try { y.add(i.toLong()) } catch (e:Exception) {
+                                println("\"$i\" is not a long. It will be skipped.")
+                            }
+                        }
+                    } else {
+                        while (scan.hasNext()) {
+                            val a = scan.next()
+                            try { y.add(a.toLong()) } catch (e:Exception) {
+                            println("\"$a\" is not a long. It will be skipped.")
+                            }
+                        }
+                    }
+                    sortNum()
+                    y.forEach { x.add(it.toString()) }
+                }
+                "lines" -> {
+                    if (args.contains("-inputFile")) {
+                        val inputContent = File(args[args.indexOfFirst { it == "-inputFile" } + 1]).readLines()
+                        for (i in inputContent) { x.add(i); sortLex() }
+                    } else while (scan.hasNext()) {
+                        x.add(scan.nextLine()); sortLex()
+                    }
+                }
+                else -> {
+                    if (args.contains("-inputFile")) {
+                        val inputContent = File(args[args.indexOfFirst { it == "-inputFile" } + 1]).readText().split(" ")
+                        for (i in inputContent) { x.add(i); sortLex() }
+                    } else while (scan.hasNext()) { x.add(scan.next()); sortLex() }
+                }
+            }
+            sortPer()
+            if (args.contains("-outputFile")) {
+                val outputFile = File(args[args.indexOfFirst { it == "-outputFile" } + 1])
+                outputFile.writeText("Total $category: ${x.size}.")
+                x.distinct().forEachIndexed { i, s -> outputFile.appendText("\n${x[i]}: ${x.count { it == s }} time(s), ${ itemPerc(s) }%") }
+            } else {
+                println("Total $category: ${x.size}.")
+                x.distinct().forEachIndexed { i, s -> println("${x[i]}: ${x.count { it == s }} time(s), ${ itemPerc(s) }%") }
+            }
+        }
+        else -> {
+            when (category) {
+                "numbers" -> {
+                    if (args.contains("-inputFile")) {
+                        val inputContent = File(args[args.indexOfFirst { it == "-inputFile" } + 1]).readText().split(" ")
+                        for (i in inputContent) {
+                            try { y.add(i.toLong()) } catch (e:Exception) {
+                                println("\"$i\" is not a long. It will be skipped.")
+                            }
+                        }
+                    } else { while (scan.hasNextLong()) y.add(scan.nextLong()) }
+                    if (args.contains("-outputFile")) {
+                            val outputFile = File(args[args.indexOfFirst { it == "-outputFile" } + 1])
+                            outputFile.writeText("Total $category: ${sortNum().size}.\nSorted data: ${y.joinToString(" ")}")
+                    } else {
+                        println("Total $category: ${sortNum().size}.\nSorted data: ${y.joinToString(" ")}")
+                    }
+                }
+                "lines" -> {
+                    if (args.contains("-inputFile")) {
+                        val inputContent = File(args[args.indexOfFirst { it == "-inputFile" } + 1]).readLines()
+                        for (i in inputContent) { x.add(i) }
+                    } else { while (scan.hasNext()) x.add(scan.nextLine()) }
+                    if (args.contains("-outputFile")) {
+                        val outputFile = File(args[args.indexOfFirst { it == "-outputFile" } + 1])
+                        outputFile.writeText("Total $category: ${sortLength().size}.\nSorted data:\n${x.joinToString("\n")}")
+                    } else {
+                        println("Total $category: ${sortLength().size}.\nSorted data:\n${x.joinToString("\n")}")
+                    }
+                }
+                "words" -> {
+                    if (args.contains("-inputFile")) {
+                        val inputContent = File(args[args.indexOfFirst { it == "-inputFile" } + 1]).readText().split(" ")
+                        for (i in inputContent) { x.add(i) }
+                    } else while (scan.hasNext()) x.add(scan.next())
+                    if (args.contains("-outputFile")) {
+                        val outputFile = File(args[args.indexOfFirst { it == "-outputFile" } + 1])
+                        outputFile.writeText("Total $category: ${sortLength().size}.\nSorted data:\n${x.joinToString("\n")}")
+                    } else {
+                        println("Total $category: ${sortLength().size}.\nSorted data:\n${x.joinToString("\n")}")
+                    }
+                }
+            }
+        }
+    }
+}
+fun itemPerc(item: String):Int = x.count { it == item } * 100 / x.size
+fun sortLength(): MutableList<String> {
+    var cnt = 0
+    for (i in 1..x.lastIndex) {
+        if (x[i - 1].length > x[i].length) {
+            val (a, b) = arrayOf(x[i], x[i - 1])
+            x[i] = b
+            x[i - 1] = a
+        } else cnt++
+    }
+    return if (cnt == x.size - 1) x else sortLength()
+}
+fun sortPer(): MutableList<String> {
+    var cnt = 0
+    for (i in 1..x.lastIndex) {
+        if (itemPerc(x[i - 1]) > itemPerc(x[i])) {
+            val (a, b) = arrayOf(x[i], x[i - 1])
+            x[i] = b
+            x[i - 1] = a
+        } else cnt++
+    }
+    return if (cnt == x.size - 1) x else sortPer()
+}
+fun sortLex(): MutableList<String> {
+    var cnt = 0
+    for (i in 1..x.lastIndex) {
+        if (x[i - 1] > x[i]) {
+            val (a, b) = arrayOf(x[i], x[i -1])
+            x[i] = b
+            x[i - 1] = a
+        } else cnt++
+    }
+    return if (cnt == x.size - 1) x else sortLex()
+}
+fun sortNum(): MutableList<Long> {
+    var cnt = 0
+    for (i in 1..y.lastIndex) {
+        if (y[i - 1] > y[i]) {
+            val (a, b) = arrayOf(y[i], y[i -1])
+            y[i] = b
+            y[i - 1] = a
+        } else cnt++
+    }
+    return if (cnt == y.size - 1) y else sortNum()
+}
